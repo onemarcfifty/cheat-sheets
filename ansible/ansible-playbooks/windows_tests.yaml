@@ -1,0 +1,35 @@
+---
+
+# ##############################################
+# Windows Tests
+# ##############################################
+
+  - name: Some Windows Tests
+    hosts: all
+    become: false
+    gather_facts: yes
+    tasks:
+
+    - name: send message to users
+      win_msg:
+        msg: "hello from Ansible !"
+        update_cache: yes
+
+    - name: Print all available facts
+      ansible.builtin.debug:
+        var: ansible_facts
+
+    - name: Speech Test
+      win_say:
+        start_sound_path: C:\Windows\Media\Windows Balloon.wav
+        msg: "Nur ein Test für die Sprachausgabe"
+        end_sound_path: C:\Windows\Media\chimes.wav
+
+    - name: Get whoami information
+      win_whoami:
+
+    - name: Download Zabbix Agent Installation File
+      win_get_url:
+        url:  https://cdn.zabbix.com/zabbix/binaries/stable/6.0/6.0.1/zabbix_agent-6.0.1-windows-amd64-openssl.msi
+        dest: C:\Users\zansible\zabbix_agent-6.0.1-windows-amd64-openssl.msi
+

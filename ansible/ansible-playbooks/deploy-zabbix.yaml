@@ -1,0 +1,210 @@
+---
+
+# ##############################################
+# deploy the zabbix agent
+# zabbix is a great softwre for monitoring and
+# alerting. It has a passive and an active agent
+# plus it is available for linux and windows
+# the playbook takes variables - please see below
+# ##############################################
+
+
+# ##############################################
+# deploy the zabbix agent on Windows
+# essentially download of the MSI file
+# from the zabbix cdn
+# and then msiexec with parameters
+# by default psk and serveractive
+# ##############################################
+
+  - name: Deploy Zabbix Agent
+    hosts: Windows
+    become: false
+    gather_facts: yes
+    tasks:
+
+# set the default variables if they are not defined
+# by default Windows is Active
+
+    - name: "Set default Zabbix Server"
+      set_fact:
+        zabbix_server: "127.0.0.1"
+      when: (zabbix_server is not defined)
+
+    - name: "Set default Zabbix Active Server"
+      set_fact:
+        zabbix_server_active: "IP OF YOUR ZABBIX SERVER"
+      when: (zabbix_server_active is not defined)
+
+# download the installer
+
+    - name: Download zabbix agent on Windows
+      win_get_url:
+        url:  https://cdn.zabbix.com/zabbix/binaries/stable/6.0/6.0.1/zabbix_agent-6.0.1-windows-amd64-openssl.msi
+        dest: C:\Users\zansible\zabbix_agent-6.0.1-windows-amd64-openssl.msi
+      when: ("Windows" in ansible_facts['distribution'])
+
+    - name: "Set variables WINDOWS"
+      set_fact:
+        zabbix_file: 'C:\Program Files\Zabbix Agent\zabbix_agentd.conf'
+      when: ("Windows" in ansible_facts['distribution'])
+
+#        product_id: '{E198D59C-95B8-43E4-8591-1C34135DD13E}'
+
+    - name: "Install zabbix WINDOWS"
+      ansible.windows.win_package:
+        path: 'C:\Users\zansible\zabbix_agent-6.0.1-windows-amd64-openssl.msi'
+        arguments:
+          - SERVER={{zabbix_server}}
+          - SERVERACTIVE={{zabbix_server_active}}
+          - TLSCONNECT=psk
+          - TLSACCEPT=psk
+          - TLSPSKIDENTITY=MyPSKID
+          - TLSPSKVALUE=765687456742365YOURPSK00000000
+        state: present
+      when: ("Windows" in ansible_facts['distribution'])
+
+# ##############################################
+# deploy the zabbix agent on Linux
+# ##############################################
+
+
+  - name: Deploy Zabbix Agent
+    hosts: all:!Windows
+    become: true
+    gather_facts: yes
+    tasks:
+
+# Installation of the software package
+
+    - name: Install zabbix-agent on debianish hosts
+      apt:
+        name: zabbix-agent
+        update_cache: yes
+      when:  ( (ansible_facts['distribution'] == "Debian") or (ansible_facts['distribution'] == "Ubuntu") )
+ 
+    - name: Install zabbix agent with opkg on OpenWrt hosts
+      shell: opkg update && opkg install zabbix-agentd zabbix-extra-network zabbix-extra-mac80211 zabbix-extra-wifi
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+# The name of the config file differs between Debian and OpenWrt
+
+    - name: "Set variables DEBIAN"
+      set_fact:
+        zabbix_file: "/etc/zabbix/zabbix_agentd.conf"
+      when:  ( (ansible_facts['distribution'] == "Debian") or (ansible_facts['distribution'] == "Ubuntu") )
+
+    - name: "Set variables OPENWRT"
+      set_fact:
+        zabbix_file: "/etc/zabbix_agentd.conf"
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+# Edit the agent config file
+
+    - name: remove obsolete lines
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^{{item.name}}='
+           state=absent
+           backup=yes
+      with_items: "{{ zabbix_vars }}"
+      when: (item.value == "REMOVE")
+      notify:
+       - restart zabbix-agent
+       - restart zabbixd-agent
+
+
+    - name: set zabbix vars
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^{{item.name}}='
+           line="{{item.name}}={{item.value}}"
+           state=present
+           backup=yes
+      with_items: "{{ zabbix_vars }}"
+      when: (item.value != "REMOVE")
+      notify:
+       - restart zabbix-agent
+       - restart zabbixd-agent
+
+    - name: set PSK Key
+      shell: echo "{{TLSPSK}}" >{{item.value}}
+      with_items: "{{ zabbix_vars }}"
+      when:  ( (item.name == "TLSPSKFile") and (item.value != "REMOVE") )
+      notify:
+       - restart zabbix-agent
+       - restart zabbixd-agent
+
+
+# The restart handlers
+
+    handlers:
+    - name: restart zabbix-agent
+      service:
+       name=zabbix-agent
+       state=restarted
+      when:  ( (ansible_facts['distribution'] == "Debian") or (ansible_facts['distribution'] == "Ubuntu") )
+
+    - name: restart zabbixd-agent
+      service:
+       name=zabbix_agentd
+       state=restarted
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+
+# ##############################################
+# Fix CPU and MEM bug for LXC containers
+# ##############################################
+
+  - name: Modify Zabbix Agent for LXC containers
+    hosts: LXCcontainers
+    become: true
+    gather_facts: no
+
+    handlers:
+    - name: restart zabbix-agent
+      service:
+       name=zabbix-agent
+       state=restarted
+
+    tasks:
+
+    - name: ct Mem Size counter
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^UserParameter=ct.memory.size'
+           line="UserParameter=ct.memory.size[*],free -b | awk '$ 1 == \"Mem:\" {total=$ 2; used=($ 3+$ 5); pused=(($ 3+$ 5)*100/$ 2); free=$ 4; pfree=($ 4*100/$ 2); shared=$ 5; buffers=$ 6; cached=$ 6; available=($ 6+$ 7); pavailable=(($ 6+$ 7)*100/$ 2); if(\"$1\" == \"\") {printf(\"%.0f\", total )} else {printf(\"%.0f\", $1 \"\" )} }'"
+           state=present
+           backup=yes
+      notify:
+       - restart zabbix-agent
+
+    - name: ct Swap Size counter
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^UserParameter=ct.swap.size'
+           line="UserParameter=ct.swap.size[*],free -b | awk '$ 1 == \"Swap:\" {total=$ 2; used=$ 3; free=$ 4; pfree=($ 4*100/$ 2); pused=($ 3*100/$ 2); if(\"$1\" == \"\") {printf(\"%.0f\", free )} else {printf(\"%.0f\", $1 \"\" )} }'"
+           state=present
+           backup=yes
+      notify:
+       - restart zabbix-agent
+
+    - name: ct CPU Load counter
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^UserParameter=ct.cpu.load'
+           line="UserParameter=ct.cpu.load[*],uptime | awk -F'[, ]+' '{avg1=$(NF-2); avg5=$(NF-1); avg15=$(NF)}{print $2/'$(nproc)'}'"
+           state=present
+           backup=yes
+      notify:
+       - restart zabbix-agent
+
+    - name: ct uptime counter
+      lineinfile:
+           dest={{zabbix_file}}
+           regexp='^UserParameter=ct.uptime'
+           line="UserParameter=ct.uptime,cut -d\".\" -f1 /proc/uptime"
+           state=present
+           backup=yes
+      notify:
+       - restart zabbix-agent

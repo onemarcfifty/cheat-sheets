@@ -1,0 +1,193 @@
+---
+
+# ############################################################################
+# ############################################################################
+#
+# Use git to backup crucial config files
+#
+# variables:
+#
+#  gitroot: (path) The root directory where the .git dir will reside
+#  initrepo: (true/false) whether to init the repo or not
+#  gitfiles: (array of paths) the dirs/files to be added to the repo
+#  commitAndPush: (boolean) whether to commit and push to remote or not
+#
+# ############################################################################
+# ############################################################################
+
+
+
+
+# ##########################
+  - name: Play for Dropbear hosts
+    hosts: Dropbear
+    gather_facts: no
+    become: false
+# ##########################
+
+    tasks:
+
+    - name: mkdir for key
+      raw: mkdir -p /root/.ssh
+
+    - name: copy git key
+      local_action: command scp /var/lib/rundeck/.ssh/id_git root@{{ inventory_hostname }}:/root/.ssh/id_git
+
+# ##########################
+  - name: Play for Dropbear hosts
+    hosts: Dropbear
+    gather_facts: no
+    become: false
+# ##########################
+
+    tasks:
+
+    - name: Install git with opkg on OpenWrt hosts
+      raw: opkg update && opkg install git dropbearconvert
+
+    - name: convert key to PEM on OpenWrt hosts
+      raw: ssh-keygen -p -N "" -m PEM -f ~/.ssh/id_git
+
+    - name: convert PEM key to dropbear on OpenWrt hosts
+      raw: dropbearconvert openssh dropbear ~/.ssh/id_git ~/.ssh/id_git_dropbear && rm ~/.ssh/id_git && mv ~/.ssh/id_git_dropbear ~/.ssh/id_git
+
+    - name: init git repo
+      raw: "cd {{gitroot}} && git init"
+      when: ( initrepo == true)
+
+    - name: Git - add remote
+      raw: cd {{gitroot}} && git remote add gitea git@gitea:marc/gitbackup_{{inventory_hostname}}.git
+      when: ( initrepo == true)
+
+    - name: add date stamp file
+      raw: cd {{gitroot}} &&  date >date.txt && git add date.txt 
+
+    - name: Git - adding files
+      raw: cd {{gitroot}} &&  git add {{item}} 
+      with_items: "{{ gitfiles }}"
+      when: ( ( commitAndPush == true ) and ( gitfiles is defined ))
+
+    - name: Git - commiting
+      shell: cd {{gitroot}} && git commit -m "gitBackup" 
+      when: ( commitAndPush == true)
+
+    - name: Git - push
+      shell: cd {{gitroot}} && git push --set-upstream gitea master 
+      environment:
+        GIT_SSH_COMMAND: ssh -y -i ~/.ssh/id_git 
+      when: ( commitAndPush == true)
+
+
+# ##########################
+  - name: Install git and prepare ssh
+    hosts: all:!Dropbear
+    gather_facts: yes
+    become: true
+# ##########################
+
+    tasks:
+
+    - name: Install git with apt on debianish hosts
+      apt:
+        name: git
+        update_cache: yes
+      when: (ansible_facts['distribution'] == "Debian")
+
+
+    - name: update opkg
+      raw: opkg update
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+    - name: Install git with opkg on OpenWrt hosts
+      raw: opkg install git dropbearconvert
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+# we need the git ssh key
+
+    - name: Ensures ssh key dir exists
+      file: path=~/.ssh state=directory
+
+    - name: copy ssh key for gitea
+      copy:
+        src: /var/lib/rundeck/.ssh/id_git
+        dest: ~/.ssh/id_git
+        mode: 0600
+
+# OpenWrt wants PEM converted for dropbear
+
+    - name: convert key to PEM on OpenWrt hosts
+      raw: ssh-keygen -p -N "" -m PEM -f ~/.ssh/id_git
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+
+    - name: convert PEM key to dropbear on OpenWrt hosts
+      raw: dropbearconvert openssh dropbear ~/.ssh/id_git ~/.ssh/id_git_dropbear && rm ~/.ssh/id_git && mv ~/.ssh/id_git_dropbear ~/.ssh/id_git
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+
+# ##########################
+  - name: Init repo
+    hosts: all:!Dropbear
+    gather_facts: no
+    become: true
+# ##########################
+
+    tasks:
+
+
+# the variable gitroot tells us where to init the repo
+
+    - name: init git repo
+      shell: "git init"
+      args:
+        chdir: "{{gitroot}}"
+      when: ( initrepo == true)
+
+    - name: Git - add remote
+      shell: git remote add gitea git@gitea:marc/gitbackup_{{inventory_hostname}}.git
+      args:
+        chdir: "{{gitroot}}"
+      when: ( initrepo == true)
+
+# ##########################
+  - name: add commit and push files
+    hosts: all:!Dropbear
+    gather_facts: no
+    become: true
+# ##########################
+
+    tasks:
+
+    - name: add date stamp file
+      shell: date >date.txt && git add date.txt 
+      args:
+        chdir: "{{gitroot}}"
+
+    - name: Git - adding files
+      shell: git add {{item}} 
+      with_items: "{{ gitfiles }}" 
+      args:
+        chdir: "{{gitroot}}"
+      when: ( ( commitAndPush == true ) and ( gitfiles is defined ))
+
+    - name: Git - Set Identity
+      shell: git config --global user.email "root@{{inventory_hostname}}"
+      args:
+        chdir: "{{gitroot}}"
+      when: ( commitAndPush == true)
+
+    - name: Git - commiting
+      shell: git commit -m "gitBackup" 
+      args:
+        chdir: "{{gitroot}}"
+      when: ( commitAndPush == true)
+
+## @@@@@@@@@@@@@@@qq FIXME : first ssh connection fails (use NoHostAuthCheck or the like)
+
+    - name: Git - push
+      shell: git push --set-upstream gitea master 
+      args:
+        chdir: "{{gitroot}}"
+      environment:
+        GIT_SSH_COMMAND: ssh -y -i ~/.ssh/id_git 
+      when: ( commitAndPush == true)

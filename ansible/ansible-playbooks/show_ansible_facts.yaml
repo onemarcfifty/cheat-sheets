@@ -1,0 +1,33 @@
+---
+
+# ##############################################
+# Show ansible facts
+# ##############################################
+
+
+# ##########################
+  - name: show facts
+    hosts: all:!Windows
+    gather_facts: yes
+    become: true
+# ##########################
+
+    tasks:
+
+    - name: Print all available facts
+      ansible.builtin.debug:
+#        var: ansible_facts
+        msg: "{{ ansible_facts | dict2items | selectattr('value.macaddress', 'defined') | map(attribute='value') | list }}"
+
+# ##########################
+  - name: show facts
+    hosts: Windows
+    gather_facts: yes
+    become: false
+# ##########################
+
+    tasks:
+
+    - name: Print all available facts
+      ansible.builtin.debug:
+        var: ansible_facts.interfaces

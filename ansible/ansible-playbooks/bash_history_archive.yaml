@@ -1,0 +1,44 @@
+---
+
+# ##############################################
+# I do not want to leave the .bash_history file
+# on my computers. But I do not want to delete
+# it neither as it may give me hints how I did
+# things in the past. Therefore I am pulling them
+# to the local server and from there push it to 
+# a git repo
+# This is a two step process. We first find and pull
+# and only if this was successful we execute
+# the second playbook
+# ##############################################
+
+
+# ##############################################
+# Take a copy of the bash history files
+# and push it to gitea
+# ##############################################
+
+
+  - name: Save bash history
+    hosts: all:!Routers:!rundeck
+    become: true
+    gather_facts: no
+
+
+    tasks:
+
+      - name: use find to get the files list which you want to copy/fetch
+        find: 
+          paths: /
+          patterns: ".bash_history"
+          recurse: yes
+          hidden: yes
+        register: file_2_fetch
+      - debug:
+          var: file_2_fetch
+
+      - name: use fetch to get the files
+        fetch:
+          src: "{{ item.path }}"
+          dest: /tmp/bash_history
+        with_items: "{{ file_2_fetch.files }}"

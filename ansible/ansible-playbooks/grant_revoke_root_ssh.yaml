@@ -1,0 +1,79 @@
+---
+
+# ##############################################
+# grant or revoke ssh root access
+# variables:
+#   pbaction: 'grant' or 'revoke'
+# ##############################################
+
+  - name: set up user and ssh environment 
+    hosts: all
+    gather_facts: no
+    become: true
+
+# restart ssh handler
+
+    handlers:
+    - name: restart ssh
+      service:
+       name=sshd
+       state=restarted
+
+    tasks:
+
+# make sure that the public key exists on the host
+
+    - name: Deploy SSH Key
+      authorized_key: user=root
+                     key="{{ lookup('file', '/path/to/your/.ssh/id_root.pub') }}"
+                     state=present
+
+# disable password authentication
+
+    - name: Disable Password Authentication
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PasswordAuthentication'
+           line="PasswordAuthentication no"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+
+    - name: Disable Password Authentication
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^AuthorizedKeysFile'
+           line="AuthorizedKeysFile  .ssh/id_rsa.pub .ssh/authorized_keys"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+
+
+# grant access
+
+    - name: Enable Root Login
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PermitRootLogin'
+           line="PermitRootLogin prohibit-password"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+      when: ( pbaction == 'grant' )
+
+# revoke access
+
+    - name: Disable Root Login
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PermitRootLogin'
+           line="PermitRootLogin no"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+      when: ( pbaction == 'revoke' )
+

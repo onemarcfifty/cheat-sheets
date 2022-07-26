@@ -1,0 +1,35 @@
+---
+
+# #######################################################
+# enable syslog
+# variables:
+#    syslogip:    ip of the syslog server
+#    syslogport:  port of the syslog server, e.g. 514
+#    syslogproto: proto of the syslog server, UDP or TCP
+# #######################################################
+
+  - name: enable remote Syslog
+    hosts: all
+    become: true
+    gather_facts: yes
+    tasks:
+
+    - name: add the syslog IP to UCI on OpenWrt
+      shell: uci set system.@system[0].log_ip={{syslogip}}
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+    - name: add the syslog PORT to UCI on OpenWrt
+      shell: uci set system.@system[0].log_port={{syslogport}}
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+    - name: add the syslog PROTO to UCI on OpenWrt
+      shell: uci set system.@system[0].log_proto={{syslogproto}}
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+    - name: commit changes to UCI on OpenWrt
+      shell: uci commit
+      when: (ansible_facts['distribution'] == "OpenWrt")
+
+    - name: restart log service
+      shell: /etc/init.d/log restart
+      when: (ansible_facts['distribution'] == "OpenWrt")

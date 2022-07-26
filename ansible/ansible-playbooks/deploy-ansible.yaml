@@ -1,0 +1,182 @@
+---
+
+# ##############################################
+# this is a playbook I use in order to deploy
+# ansible to devices.
+# On OpenWrt I am actually replacing the ssh 
+# daemon (dropbear) with openssh.
+# this is not necessary and maybe not even possible
+# on devices with very small storage.
+# however, openssl can manage different users
+# and doesn't need key conversion
+# First time deploy with --ask-pass
+#
+# if re-deploying, then first remove the router 
+# from the standardssh tag in the inventory
+# and then move dropbear on the router to port 
+# 22: 
+# uci set dropbear.@dropbear[0].Port=22
+# uci commit
+# /etc/init.d/dropbear restart
+# the last step (disable dropbear)
+# will probably fail if redeploying
+# just do this in the Web GUI (luci)
+#
+# My routers are in the ansible group Routers
+# ##############################################
+
+  - name: preparation steps OpenWrt
+    hosts: Routers
+    become: true
+    gather_facts: no
+    vars:
+      - ansible_ssh_user: root
+        ansible_connection: ssh
+        ansible_ssh_pass: YOURVAULTEDPWD HERE
+        ansiblessh_password: YOURVAULTEDPWD HERE
+        
+    tasks:
+
+      - name: update opkg
+        raw: opkg update
+
+      - name: Install software
+        raw: opkg install shadow-useradd shadow-usermod sudo python3 openssh-server
+
+#      - name: Install software
+#        raw: opkg install shadow-useradd shadow-usermod sudo micropython openssh-server
+
+      - name: change dropbear port
+        raw: uci set dropbear.@dropbear[0].Port=2222
+
+      - name: commit dropbear changes
+        raw: uci commit dropbear
+
+      - name: enable openssh
+        raw: /etc/init.d/sshd enable
+
+      - name: restart dropbear && openssh
+        raw: /etc/init.d/dropbear restart ; /etc/init.d/sshd start
+
+# ##############################################
+# this part is not used yet - we can't change 
+# ssh parameters on libreelec
+# ##############################################
+
+
+  - name: set up user and ssh environment kodi clients
+    hosts: xkodi
+    gather_facts: no
+    become: true
+    remote_user: root
+    vars:
+    - ansible_ssh_user: root
+
+    tasks:
+
+    - name: Deploy SSH Key
+      authorized_key: user=root
+                     key="{{ lookup('file', '/path/to/your/ssh/key') }}"
+                     state=present
+
+    - name: Disable Password Authentication
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PasswordAuthentication'
+           line="PasswordAuthentication no"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+ 
+# ##############################################
+# This is the common part for all machines
+# (except kodi)
+# we create the ansiblessh user
+# add it to the sudoers, and deploy the ssh
+# keys and lock down ssh access
+# ##############################################
+
+
+  - name: set up user and ssh environment
+    hosts: all:!kodi
+    gather_facts: no
+    become: true
+    remote_user: root
+    vars:
+    - ansible_connection: ssh
+      ansible_ssh_user: root
+      ansiblessh_password: YOURVAULTEDPWD HERE
+      ansible_ssh_pass: YOURVAULTEDPWD HERE
+
+    tasks:
+
+    - name: Install sudo apt on debianish hosts
+      apt:
+        name: sudo
+        update_cache: yes
+      when: "'debian' in group_names"
+ 
+    - name: Add a new user named ansiblessh
+      user:
+          name=ansiblessh
+          password={{ ansiblessh_password }}
+ 
+    - name: Add ansiblessh user to the sudoers
+      copy:
+          dest: "/etc/sudoers.d/ansiblessh"
+          content: "ansiblessh  ALL=(ALL)  NOPASSWD: ALL"
+ 
+    - name: Deploy SSH Key
+      authorized_key: user=ansiblessh
+                     key="{{ lookup('file', '/path/to/your/ssh/key') }}"
+                     state=present
+ 
+    - name: Disable Password Authentication
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PasswordAuthentication'
+           line="PasswordAuthentication no"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+ 
+    - name: Disable Root Login
+      lineinfile:
+           dest=/etc/ssh/sshd_config
+           regexp='^PermitRootLogin'
+           line="PermitRootLogin no"
+           state=present
+           backup=yes
+      notify:
+       - restart ssh
+ 
+    handlers:
+    - name: restart ssh
+      service:
+       name=sshd
+       state=restarted
+
+# ##############################################
+# on OpenWrt we had moved the dropbear ssh to 
+# port 2222 temporarily.
+# now we disable it. From now on
+# the router will use OpenSSH
+# ##############################################
+
+
+  - name: disable dropbear OpenWrt
+    hosts: Routers
+    gather_facts: no
+    become: true
+
+ 
+    tasks:
+
+      - name: stop dropbear
+        command: /etc/init.d/dropbear stop
+
+      - name: disable dropbear
+        command: /etc/init.d/dropbear disable
+        

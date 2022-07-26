@@ -1,0 +1,85 @@
+---
+
+# ######################################################
+# Ansible ssh access for low mem OpenWrt Routers
+# Low-memory devices do not have enough RAM for
+# python 3 etc. I still want to manage those with 
+# ansible, essentially using ssh only.
+# 
+# This playbook configures dropbear 
+# ssh for key based auth
+#
+# Pre-requisites:
+#   ssh access as root with the configured passwords
+# ######################################################
+
+  - name: copy the public key to the router
+    hosts: Routers
+    become: false
+    gather_facts: no
+    vars:
+      - ansiblessh_password: YOUR_VAULTED_SSH_PASSWORD_TO_THE_ROUTER
+    tasks:
+
+      - name: local scp
+        local_action: command sshpass -p {{ ansiblessh_password }} scp -r /path/to/your/.ssh/key root@{{ inventory_hostname }}:/etc/dropbear/authorized_keys
+
+  - name: preparation steps OpenWrt
+    hosts: Routers
+    become: true
+    gather_facts: no
+    vars:
+      - ansible_ssh_user: root
+        ansible_connection: ssh
+        ansible_ssh_pass: YOUR_VAULTED_SSH_PASSWORD_TO_THE_ROUTER
+        ansiblessh_password: YOUR_VAULTED_SSH_PASSWORD_TO_THE_ROUTER
+        
+    tasks:
+
+      - name: update opkg
+        raw: opkg update
+
+
+# now install the required software like sudo and shadow-usermod
+
+      - name: Install software
+        raw: opkg install shadow-useradd shadow-usermod sudo
+
+# create the ansiblessh user if it doesn't exist already
+
+      - name: create ansible user
+        raw: grep "ansiblessh" /etc/passwd || useradd -m ansiblessh
+
+# add the ansible user to the sudoers
+
+      - name: add ansible user to sudoers
+        raw: "echo 'ansiblessh  ALL=(ALL)  NOPASSWD: ALL' >/etc/sudoers.d/ansiblessh"
+
+# my older playbooks might have installed openssh
+# if so, then we remove it
+
+      - name: remove OpenSSH if installed
+        raw: if (opkg list-installed |grep openssh-server) ; then opkg remove openssh-server ; fi
+
+# Just make sure dropbear is configured
+# and active
+
+      - name: set dropbear port
+        raw: uci set dropbear.@dropbear[0].Port=22
+
+      - name: disable ssh user-pass login
+        raw: uci set dropbear.@dropbear[0].PasswordAuth="0"
+
+      - name: disable Root ssh pwd login
+        raw: uci set dropbear.@dropbear[0].RootPasswordAuth="0"
+
+      - name: commit dropbear changes
+        raw: uci commit dropbear
+
+      - name: enable dropbear
+        raw: /etc/init.d/dropbear enable
+
+      - name: restart dropbear
+        raw: /etc/init.d/dropbear restart
+
+

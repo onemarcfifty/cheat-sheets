@@ -1,0 +1,56 @@
+---
+
+# #######################################################
+# backup from Synology NAS to WD mycloud
+# #######################################################
+# I have two NAS systems, a great Synology NAS and a
+# small WD mycloud.
+# My backup (which is in fact more of a replication)
+# uses NFS mounts and rsync.
+# the problem on the WD mycloud is that you need to first 
+# change the root squash parameter.
+# unfortunately this is not persistent
+# #######################################################
+
+
+- name: prepare WD
+  hosts: WD_mycloud
+
+  tasks:
+
+    - name: change squash to no root squash
+      replace:
+        path: /etc/exports
+        regexp: 'all_squash'
+        replace: 'no_root_squash'    
+
+    - name: apply exports changes
+      command: /usr/sbin/exportfs -ra
+
+- name: NAS to NAS backup
+  hosts: synologynas
+
+  tasks:
+
+    - name: Mount NFS1 on WD Mycloud
+      ansible.posix.mount:
+        path: /mnt/disk1
+        src: IP_ADDRESS_OF_WD:/nfs/backup
+        fstype: nfs
+        state: mounted
+      become: yes
+
+    - name: Sync data
+      command: rsync -a -H --del --exclude cloud.transfer --exclude \@eaDir /volume1/path/to/your/data /mnt/disk1/backup/
+      become: yes
+
+    - name: Sync more data
+      command: rsync -a --exclude \@eaDir /volume1/another/path /mnt/disk1/backup/
+      become: yes
+
+    - name: Unmount the NFS1 volume
+      ansible.posix.mount:
+        path: /mnt/disk1
+        state: absent
+      become: yes
+

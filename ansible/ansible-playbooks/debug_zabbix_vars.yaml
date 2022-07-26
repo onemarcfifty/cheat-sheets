@@ -1,0 +1,21 @@
+---
+
+# ##############################################
+# debug zabbix vars
+# ##############################################
+
+
+# ##########################
+  - name: show zabbix vars
+    hosts: all
+    gather_facts: no
+    become: true
+# ##########################
+
+    tasks:
+
+    - name: Print all zabbix vars
+      with_items: "{{ zabbix_vars }}"
+      ansible.builtin.debug:
+        var: item.name
+#        var: item.value

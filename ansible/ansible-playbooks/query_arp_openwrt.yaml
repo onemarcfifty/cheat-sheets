@@ -1,0 +1,47 @@
+---
+
+# ##############################################
+# Query the arp cache
+# ##############################################
+
+
+  - name: get the log
+    hosts: Routers
+    become: true
+    gather_facts: no
+
+    tasks:
+
+      - name: get dhcp config file
+        fetch:
+          src: "/etc/config/dhcp"
+          dest: /tmp/arp_cache
+
+      - name: get dhcp leases file
+        fetch:
+          src: "/tmp/dhcp.leases"
+          dest: /tmp/arp_cache
+
+      - name: run the logread command
+        command: logread
+        register: cli_result
+
+      - name: save the content to file
+        local_action: copy content={{ cli_result.stdout }} dest=/tmp/arp_cache/logread-{{ inventory_hostname }}
+
+  - name: query arp
+    hosts: always_on:!cloud
+    become: true
+    gather_facts: no
+
+    tasks:
+#      - name: run the arp command
+#        command: arp
+#        register: cli_result
+
+      - name: get arp cache
+        fetch:
+          src: "/proc/net/arp"
+          dest: /tmp/arp_cache
+
+  

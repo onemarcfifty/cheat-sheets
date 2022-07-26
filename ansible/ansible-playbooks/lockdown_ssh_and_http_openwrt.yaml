@@ -1,0 +1,93 @@
+---
+
+# ######################################################
+# I have a management network on a separate VLAN
+# in the 10.39.x.x range
+# I do not want people from other VLANS
+# (such as guests) to access ssh or the web interface
+# of my routers. In order to achieve this I
+# set the listening port for ssh and uhttpd to
+# the MGMT interface
+# ######################################################
+
+  - name: lock down uhttpd bindings
+    hosts: Routers
+    become: true
+    gather_facts: no
+
+    tasks:
+
+      - name: uhttpd.main.listen_https
+        raw: if ubus list network.interface.MGMT ; then uci set uhttpd.main.listen_https=`ubus call  network.interface.MGMT status |grep address | grep 10.39 |cut -d \"  -f 4`:443 ; fi
+
+      - name: uhttpd.main.listen_http
+        raw: if ubus list network.interface.MGMT ; then uci set uhttpd.main.listen_http=`ubus call  network.interface.MGMT status |grep address | grep 10.39 |cut -d \"  -f 4`:80 ; fi
+
+      - name: uhttpd commit
+        raw: uci commit uhttpd && /etc/init.d/uhttpd restart
+
+
+  - name: lock down dropbear bindings
+    hosts: Dropbear
+    become: true
+    gather_facts: no
+
+    tasks:
+
+      - name: dropbear listen
+        raw: if ubus list network.interface.MGMT ; then  uci set dropbear.@dropbear[0].Interface=MGMT; fi
+
+      - name: dropbear commit
+        raw: uci commit dropbear && /etc/init.d/dropbear restart
+
+  - name: lock down openssh and zabbix bindings
+    hosts: Routers:!Dropbear
+    become: true
+    gather_facts: no
+
+    handlers:
+
+    - name: restart ssh
+      service:
+       name=sshd
+       state=restarted
+
+    - name: restart zabbix
+      service:
+       name=zabbix_agentd
+       state=restarted
+
+    tasks:
+      - name: gather MGMT address
+        shell: ubus call  network.interface.MGMT status |grep address | grep 10.39 |cut -d \"  -f 4
+        register: MGMTINTERFACE
+
+      - debug:
+          var: MGMTINTERFACE.stdout
+
+      - name: openssh bindings
+        lineinfile:
+          dest=/etc/ssh/sshd_config
+          regexp='^ListenAddress'
+          line="ListenAddress {{MGMTINTERFACE.stdout}}"
+          state=present
+          backup=yes
+        notify:
+          - restart ssh
+
+      - name: zabbix bindings
+        lineinfile:
+          dest=/etc/zabbix_agentd.conf
+          regexp='^ListenIP='
+          line="ListenIP={{MGMTINTERFACE.stdout}}"
+          state=present
+          backup=yes
+        notify:
+          - restart zabbix
+
+
+#      - name: dropbear listen
+#        raw: if ubus list network.interface.MGMT ; then  uci set dropbear.@dropbear[0].Interface=MGMT; fi
+
+#      - name: dropbear commit
+#        raw: uci commit dropbear && /etc/init.d/dropear restart

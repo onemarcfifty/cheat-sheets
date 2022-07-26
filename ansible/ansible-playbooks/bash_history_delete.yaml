@@ -1,0 +1,31 @@
+---
+
+# ##############################################
+# delete the bash history
+# ##############################################
+
+
+  - name: Delete bash history
+    hosts: all:!Routers:!rundeck
+    become: true
+    gather_facts: no
+
+
+    tasks:
+
+      - name: use find to get the files list which you want to copy/fetch
+        find: 
+          paths: /
+          patterns: ".bash_history"
+          recurse: yes
+          hidden: yes
+        register: file_2_fetch
+      - debug:
+          var: file_2_fetch
+
+      - name: remove the file at its origin
+        file:
+          path: "{{ item.path }}"
+          state: absent
+        with_items: "{{ file_2_fetch.files }}"
+

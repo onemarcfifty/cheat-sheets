@@ -1,0 +1,50 @@
+---
+
+# ##############################################
+# enable or disable ip forwarding (routing)
+# variables:
+#     ipv4: 0=disable, 1 = enable
+#     ipv6: 0=disable, 1 = enable
+# ##############################################
+
+  - name: change routing
+    hosts: all
+    become: true
+    gather_facts: yes
+
+    tasks:
+
+    - name: Setting facts
+      set_fact:
+         conffile: /etc/sysctl.conf
+
+    - name: set ipv4 forwarding sysctl
+      lineinfile:
+           dest={{conffile}}
+           regexp='^net.ipv4.ip_forward'
+           line="net.ipv4.ip_forward={{ipv4}}"
+           state=present
+
+    - name: set ipv4 forwarding runtime
+      shell: echo {{ipv4}} >/proc/sys/net/ipv4/ip_forward
+
+    - name: set ipv6 forwarding 1
+      lineinfile:
+           dest={{conffile}}
+           regexp='^net.ipv6.conf.default.forwarding'
+           line="net.ipv6.conf.default.forwarding={{ipv6}}"
+           state=present
+
+    - name: set ipv6 forwarding 2
+      lineinfile:
+           dest={{conffile}}
+           regexp='^net.ipv6.conf.all.forwarding'
+           line="net.ipv6.conf.all.forwarding={{ipv6}}"
+           state=present
+
+    - name: set ipv6 forwarding runtime 1
+      shell: echo {{ipv6}} >/proc/sys/net/ipv6/conf/default/forwarding
+
+    - name: set ipv6 forwarding runtime 2
+      shell: echo {{ipv6}} >/proc/sys/net/ipv6/conf/all/forwarding
+
