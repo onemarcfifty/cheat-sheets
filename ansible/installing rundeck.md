@@ -1,5 +1,7 @@
 # rundeck installation
 
+rundeck is a great GUI for Docker and other automation software (e.g. hashicorp terraform) and also a remote execution software itself!
+
 ## on Debian
 
 The “Official” Installation instructions don’t work, see github issue https://github.com/rundeck/rundeck/issues/7098
