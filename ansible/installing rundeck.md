@@ -19,3 +19,24 @@ Now you can start rundeck:
 
     /etc/init.d/rundeckd start
     systemctl enable rundeckd
+
+You can now log in to http://(hostname):4440 with user **admin** and pass **admin**
+
+### Database migration to mySQL / mariadb
+
+1. export all projects (Project settings - Export Archive)
+2. stop rundeck: `service rundeckd stop`
+3. backup H2 database in (rundeckhome)/data
+4. install mariadb `apt install mariadb-server`
+5. create the rundeck db:
+
+    mysql -u root -p
+    create database rundeck;
+    grant ALL on rundeck.* to rundeck@localhost identified by 'YOURPASSWORDHERE';
+    quit
+6. edit `/etc/rundeck/rundeck-config.properties`
+
+    dataSource.driverClassName = org.mariadb.jdbc.Driver
+    dataSource.url = jdbc:mysql://localhost/rundeck?autoReconnect=true&useSSL=false
+    dataSource.username = rundeck
+    dataSource.password = YOURPASSWORDHERE
