@@ -31,15 +31,15 @@ This can only be done *once* in order to void ambiguity:
 
 ### Ways to  assign IPv6 addresses ###
 
-**Static** - fixed address
-**SLAAC** - Stateless Address Autoconfiguration (host generates itself)
-**DHCPv6** - Dynamic host configuration protocol (assigned by central server)
+**Static** - fixed address  
+**SLAAC** - Stateless Address Autoconfiguration (host generates itself)  
+**DHCPv6** - Dynamic host configuration protocol (assigned by central server)  
 
 ### Scopes and special addresses ###
 
-**GLOBAL** - everything (i.e. the whole internet)
-**UNIQUE LOCAL** - everything in our LAN (behind the internet gateway)
-**LINK LOCAL** - (will never be routed, valid in one collision domain, i.e. on the same switch)
+**GLOBAL** - everything (i.e. the whole internet)  
+**UNIQUE LOCAL** - everything in our LAN (behind the internet gateway)  
+**LINK LOCAL** - (will never be routed, valid in one collision domain, i.e. on the same switch)  
 
 | range     | Purpose                                        |
 | --------- | ---------------------------------------------- |
