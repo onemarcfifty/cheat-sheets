@@ -49,7 +49,8 @@ This can only be done *once* in order to void ambiguity:
 | FC00::/7  | Unique-local (LAN)                             |
 | FE80::/10 | Link-Local Unicast (same switch)               |
 
-Always use the smallest possible scope for communication
+Always use the smallest possible scope for communication  
+A host can have **multiple** addresses in different scopes
 
 ### Subnetting ###
 
