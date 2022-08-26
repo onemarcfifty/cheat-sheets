@@ -16,3 +16,9 @@ Now you can install ansible by doing
     pip install ansible
 
 If you do this as root, then ansible will be installed globally (e.g. in /usr/local/bin) **If you do this as non-root user, ansible will be installed under .local/bin under your home directory** and wil theerefore not be in the PATH
+
+## recommendation
+
+1. Create non-root user for ansible
+2. put ansible config into .ansible.cfg in the user's home (advantage: can easily be changed with Filezilla / Editor without root ssh access)
+3. point inventory to directory rather than file (advantage: have multiple inventory sources)
