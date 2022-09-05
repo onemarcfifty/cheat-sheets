@@ -23,11 +23,11 @@ This can only be done *once* in order to void ambiguity:
 
 ### Protocols ###
 
-| Number | Protocol | Purpose                                   |
-| ------ | -------- | ----------------------------------------- |
-|  1     | ICMPv6   | Information, Error reporting, diagnostics |
-|  6     | TCP      | Stateful - controls if packets arrived    |
-| 17     | UDP      | Stateless - streaming applications etc.   |
+| Number | Protocol  | Purpose                                   |
+| ------ | --------- | ----------------------------------------- |
+|  58    | IPv6-ICMP | Information, Error reporting, diagnostics |
+|  6     | TCP       | Stateful - controls if packets arrived    |
+| 17     | UDP       | Stateless - streaming applications etc.   |
 
 ### Ways to  assign IPv6 addresses ###
 
