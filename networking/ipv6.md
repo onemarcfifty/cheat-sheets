@@ -54,9 +54,11 @@ A host can have **multiple** addresses in different scopes
 
 ### Subnetting ###
 
-First 48 bits: **Network** address
-Next 16 bits: **Subnet** address
-Last 64 bits: **Device** address
+| bits (MSB)      | Purpose                                        |
+| --------------- | ----------------------- |
+| First 48 bits:  | **Network** address     |
+| Next 16 bits:   | **Subnet** address      |
+| Last 64 bits:   | **Device** address      |
 
 **Network+Subnet = Prefix**
 
@@ -64,7 +66,7 @@ The following address
 
     2003:1000:1000:1600:1234::1
 
-would have the network `2003:1000:1000`, the subnet `1600`, so together the prefix `2003:1000:1000:1600`. If the ISP provider **delegated** a part of the prefix to me (e.g. `2003:1000:1000:1600/56`) then I could use the subnets `2003:1000:1000:1600` `2003:1000:1000:16FF` for my own purposes (i.e. define 256 subnets in this example)
+would have the network `2003:1000:1000`, the subnet `1600`, so together the prefix `2003:1000:1000:1600`. If the ISP provider **delegated** a part of the prefix to me (e.g. `2003:1000:1000:1600/56`) then I could use the subnets from `2003:1000:1000:1600` to `2003:1000:1000:16FF` for my own purposes (i.e. define 256 subnets in this example)
 
 ### Using IPv6 addresses in browser ###
 
