@@ -68,6 +68,6 @@ The following address
 
 would have the network `2003:1000:1000`, the subnet `1600`, so together the prefix `2003:1000:1000:1600`. If the ISP provider **delegated** a part of the prefix to me (e.g. `2003:1000:1000:1600/56`) then I could use the subnets from `2003:1000:1000:1600` to `2003:1000:1000:16FF` for my own purposes (i.e. define 256 subnets in this example)
 
-### Using IPv6 addresses in browser ###
+### IPv6 addresses in URIs/URLs ###
 
-IPv6 addresses can be written in brackets in order to be identified as IPv6, e.g. `https://[2a00:1450:4001:82a::2004]` (might lead to a certificate error though with https as the hostname can not be verified against the certificate)
+Because IPv6 address notation uses colons to separate hextets, it is necessary to encase the address in square brackets in URIs. For example `http://[2a00:1450:4001:82a::2004]`. If you want to specify a port, you can do so as normal using a colon: `http://[2a00:1450:4001:82a::2004]:80`.
