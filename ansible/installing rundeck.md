@@ -32,11 +32,16 @@ You can now log in to http://(hostname):4440 with user **admin** and pass **admi
 4. install mariadb `apt install mariadb-server`
 5. create the rundeck db:
 
+type the following:
+
     mysql -u root -p
     create database rundeck;
     grant ALL on rundeck.* to rundeck@localhost identified by 'YOURPASSWORDHERE';
     quit
+
 6. edit `/etc/rundeck/rundeck-config.properties`
+
+put the following content in the file:
 
     dataSource.driverClassName = org.mariadb.jdbc.Driver
     dataSource.url = jdbc:mysql://localhost/rundeck?autoReconnect=true&useSSL=false
