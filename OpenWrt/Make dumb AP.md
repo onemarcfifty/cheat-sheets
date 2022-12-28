@@ -1,3 +1,5 @@
+# Making a dumb AP
+
 **convert a vanilla OpenWrt router into a dumb AP**
 
 A "dumb AP" does not have routing functionality, i.e. it will act as an access point only. These are the steps that need to be taken:
@@ -78,3 +80,12 @@ Now you can attach all Wifi interfaces to the LAN network
     # reboot the device
 
     reboot
+
+## Telling the AP that it is not a Router any more
+
+With he above, the "dumb AP" does not have any router functionality any more. However - if you are using VLANs (like for example guest, iot, lan) then your Access point will have a leg in each of these networks. We therefore need to be sure that it does not act as a router and forward packages between the segments. In order to turn off IPv4 and IPv6 forwarding (and reply to the ff02::2 address and the like), add the following to `/etc/sysctl.conf` file:
+
+    net.ipv4.ip_forward=0
+    net.ipv6.conf.default.forwarding=0
+    net.ipv6.conf.all.forwarding=0
+
