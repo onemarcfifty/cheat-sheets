@@ -1,0 +1,18 @@
+---
+
+# This Ansible Playbook can be used to update Wild Card
+# LetsEncrypt certificates with DNS Challenge and a manual
+# Authentication Hook
+
+- name: Update letsEncrypt Certificate
+  hosts: localhost
+  become: false
+
+  tasks:
+
+    - name: Request cert
+      ansible.builtin.shell:
+        cmd: certbot certonly  --manual --preferred-challenges dns \
+              --manual-auth-hook ./auth_hook.py --agree-tos -m yourmail@yourdomain \
+              -n -d yourdomain.com --manual-public-ip-logging-ok -d *.yourdomain.com
+        chdir: /the/directory/where/auth_hook.py/resides

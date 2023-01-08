@@ -1,0 +1,153 @@
+---
+
+# Use this Playbook to distribute your Wildcard or Server
+# Certificates to hosts in your LAN
+# There's no magic here, basically just copies the certificate files
+# from the localhost to the remote hosts
+
+# This Play can be used to push certificates to
+# a ProxMox PVE host (in my example PVE1 and PVE2)
+- name: Push to PVE
+  hosts: pve1:pve2
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    # We first need to touch the file as otherwise the later file copy
+    # will fail. I am sure there is a more elegant way to this.
+
+    - name: Touch file1
+      ansible.builtin.file:
+        dest: /etc/pve/local/pveproxy-ssl.pem
+        state: touch
+        mode: '644'
+
+    - name: Touch file2
+      ansible.builtin.file:
+        dest: /etc/pve/local/pveproxy-ssl.key
+        state: touch
+        mode: '600'
+
+    # The certificate is located in the fullchain.pem file.
+    # actually the live/yourdomain/fullchain.pem
+    # is a symlink to the latest fullchain.pem from the archive
+    - name: Push cert
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+        dest: /etc/pve/local/pveproxy-ssl.pem
+        owner: root
+        follow: true
+        force: true
+        remote_src: false
+        group: www-data
+        mode: '640'
+
+    # On Proxmox PVE we need to set the permissions to 640
+    # because the www-data group needs to be able to read it
+    - name: Push privkey
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/privkey.pem
+        dest: /etc/pve/local/pveproxy-ssl.key
+        follow: true
+        force: true
+        remote_src: false
+        owner: root
+        group: www-data
+        mode: '640'
+
+    - name: Restart pve proxy
+      ansible.builtin.service:
+        name: pveproxy
+        state: restarted
+
+# This Play can be used to push certificates to
+# an NGINX reverse proxy
+# Just add these lines to the nginx site config file:
+# ssl_certificate /etc/letsencrypt/live/yourdomain.com/cert.pem;
+# ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+- name: Push to nginx
+  hosts: nginx
+  become: true
+
+  tasks:
+
+    - name: Create dir
+      ansible.builtin.file:
+        dest: /etc/letsencrypt/live/yourdomain.com
+        state: directory
+        mode: '644'
+
+    - name: Touch file1
+      ansible.builtin.file:
+        dest: /etc/letsencrypt/live/yourdomain.com/cert.pem
+        state: touch
+        mode: '644'
+
+    - name: Touch file2
+      ansible.builtin.file:
+        dest: /etc/letsencrypt/live/yourdomain.com/chain.pem
+        state: touch
+        mode: '644'
+
+    - name: Touch file3
+      ansible.builtin.file:
+        dest: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+        state: touch
+        mode: '644'
+
+    - name: Touch file4
+      ansible.builtin.file:
+        dest: /etc/letsencrypt/live/yourdomain.com/privkey.pem
+        state: touch
+        mode: '600'
+
+    - name: Push chain
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/chain.pem
+        dest: /etc/letsencrypt/live/yourdomain.com/chain.pem
+        owner: root
+        follow: true
+        force: true
+        remote_src: false
+        group: www-data
+        mode: '640'
+
+    - name: Push privkey
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/privkey.pem
+        dest: /etc/letsencrypt/live/yourdomain.com/privkey.pem
+        follow: true
+        force: true
+        remote_src: false
+        owner: root
+        group: www-data
+        mode: '640'
+
+    - name: Push cert
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/cert.pem
+        dest: /etc/letsencrypt/live/yourdomain.com/cert.pem
+        owner: root
+        follow: true
+        force: true
+        remote_src: false
+        group: www-data
+        mode: '640'
+
+    - name: Push fullchain
+      ansible.builtin.copy:
+        src: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+        dest: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+        follow: true
+        force: true
+        remote_src: false
+        owner: root
+        group: www-data
+        mode: '640'
+
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
