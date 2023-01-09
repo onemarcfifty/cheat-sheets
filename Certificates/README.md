@@ -6,7 +6,7 @@ Check the certificate videos on my YouTube channel for details.
 
 In the `ansible-playbooks` subdirectory you can find some playbooks that I use for distribution of LetsEncrypt certificates in my LAN.
 
-## Create a CA
+## Create a CA with openssl
 
 ### Generate the CA root key
 
@@ -21,7 +21,7 @@ In the `ansible-playbooks` subdirectory you can find some playbooks that I use f
     # the validity is 10 years (3650 days)
     openssl req -x509 -new -nodes -key ca-root.key -sha256 -days 3650 -out ca-root.crt
 
-## Create a Server Certificate
+## Create a Server Certificate with openssl
 
 ### Generate a private key for a Server
 
@@ -37,3 +37,13 @@ In the `ansible-playbooks` subdirectory you can find some playbooks that I use f
     # parameters inside that file (alt_names etc.)
     # add the cnf file with the -extfile parameter
     openssl x509 -req -in server.csr -CA ca-root.crt -CAkey ca-root.key -CAcreateserial -out server.crt -days 365
+
+## What needs to go where?
+
+Some of the files need to be kept secret (on Linux : chmod 600), some don't.
+
+| File       | Content                   | Goes where                         | Secret? |
+| ---------- | ------------------------- | ---------------------------------- | ------- |
+| ca.crt     | CA (PEM) without key      | import as "Authority" into Browser | No      |
+| server.crt | Server Cert (PEM), no key | On the web server                  | No      |
+| server.key | Server private Key (PEM)  | On the web server                  | YES     |
