@@ -27,15 +27,18 @@ I strive to use TLSv1.3 only, however, if the last host in the forward chain is 
 
 If you want to avoid people scanning your Web Server, then move your services into sub directories (e.g. `https://yourdomain.com/directory`) In order to make requests to the root fail, add a default server entry AS THE FIRST ENTRY in the enabled site config:
 
+```
   server
   {
     listen  443 ssl;
     listen [::]:443 ssl;
     return(404);
   }
+```
 
 All following lines refer to the sub directory:
 
+```
   location /yourdir
   {
     limit_except GET POST
@@ -45,6 +48,7 @@ All following lines refer to the sub directory:
     include /etc/nginx/snippets/proxy.conf;
     proxy_pass  http://localhost:8080/;
   }
+```
 
 
 ### "Certificate Sniffing" on the default site
