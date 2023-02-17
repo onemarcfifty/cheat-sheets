@@ -1,6 +1,10 @@
 ## IPv6 cheat sheet ##
 
-This cheat sheet goes together with videos that I have made. [The first video episode is here](https://youtu.be/oItwDXraK1M)
+This cheat sheet goes together with videos that I have made.
+
+1. [IPv6 from scratch - the very basics of IPv6 explained](https://youtu.be/oItwDXraK1M)
+2. [IPv6 explained - SLAAC and DHCPv6 (IPv6 from scratch part 2)](https://youtu.be/jlG_nrCOmJc)
+3. [IPv6 with OpenWrt](https://youtu.be/LJPXz8eA3b8)
 
 ### Address length and format ###
 
