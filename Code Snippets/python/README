@@ -1,0 +1,6 @@
+## dedupe.py
+
+**Fast duplicate file finder.**
+Based on this [Article on StackOverflow](https://stackoverflow.com/a/36113168/300783)
+Modified for Python3 with some small code improvements.
+forked from [ntjess/duplicates.py](https://gist.github.com/ntjess/1663d25d09bd762af2f0c60f600191f5)
