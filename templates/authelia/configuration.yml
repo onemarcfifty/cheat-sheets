@@ -1,0 +1,96 @@
+# #######################################
+# authelia config
+# source: https://florianmuller.com
+# #######################################
+
+theme: dark
+default_redirection_url: https://auth.example.com/
+
+server:
+  host: 0.0.0.0
+  port: 9091
+  asset_path: /etc/authelia/.assets/
+
+log:
+  level: debug
+  file_path: /var/log/authelia.log
+
+totp:
+  issuer: auth.example.com
+
+webauthn:
+  disable: false
+  display_name: Authelia
+  attestation_conveyance_preference: indirect
+  user_verification: discouraged
+  timeout: 60s
+
+ntp:
+  address: "0.de.pool.ntp.org:123"
+  version: 4
+  max_desync: 3s
+  disable_startup_check: false
+
+authentication_backend:
+  file:
+    path: /etc/authelia/.users/users_database.yml
+    password:
+      algorithm: argon2id
+      iterations: 1
+      key_length: 32
+      salt_length: 16
+      memory: 1024
+      parallelism: 8
+
+access_control:
+  default_policy: two_factor
+  rules: ### OPTIONAL SETTING
+    # no auth
+    - domain: magicmirror.local.example.com
+      policy: bypass
+    # one factor
+    - domain: services.local.example.com
+      policy: one_factor
+    # 2fa
+    - domain: server.example.com
+      policy: two_factor
+
+session:
+  name: authelia_session
+  expiration: 3600  # 1 hour
+  inactivity: 300  # 5 minutes
+  domain: auth.example.com
+  same_site: lax
+  remember_me_duration: 7d
+
+regulation:
+  max_retries: 3
+  find_time: 120
+  ban_time: 300
+
+storage:
+  local:
+    path: /etc/authelia/.db/sqlite3.db
+
+
+notifier: 
+  disable_startup_check: true
+  smtp:
+    host: smtp.domain.com
+    port: 465
+    timeout: 5s
+    username: noreply@auth.example.com
+    sender: "Authentication Service <noreply@auth.example.com>"
+    subject: "{title}"
+    startup_check_address: noreply@auth.example.com
+    disable_require_tls: false
+    disable_html_emails: false
+    tls:
+      skip_verify: false
+      minimum_version: TLS1.2
+
+identity_providers:
+  oidc:
+    clients:
+      - id: dummy
+        secret: 'dummy'

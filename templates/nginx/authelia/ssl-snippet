@@ -1,0 +1,13 @@
+# DNS Resolver  and generic settings
+# resolver is set to systemd-resolved on localhost
+# replace with your DNS server if needed
+
+resolver    127.0.0.53 ipv6=off;
+proxy_buffers   256 4k;
+proxy_max_temp_file_size        0k;
+
+# SSL certificate settings
+
+ssl_certificate /etc/authelia/certs/server.crt;
+ssl_certificate_key /etc/authelia/certs/server.key;
+ssl_session_timeout 5m;
