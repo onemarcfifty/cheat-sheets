@@ -15,7 +15,7 @@ Now you can install ansible by doing
 
     pip install ansible
 
-If you do this as root, then ansible will be installed globally (e.g. in /usr/local/bin) **If you do this as non-root user, ansible will be installed under .local/bin under your home directory** and wil theerefore not be in the PATH
+If you do this as root, then ansible will be installed globally (e.g. in /usr/local/bin) **If you do this as non-root user, ansible will be installed under .local/bin under your home directory** and will therefore not be in the PATH
 
 ## recommendation
 
