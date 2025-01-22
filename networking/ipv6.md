@@ -54,7 +54,7 @@ When working in the world of IPv6, our addresses can vary depending on our scope
 | ::1/128   | Loopback Address (localhost)     |
 | ::/128    | Unspecified Address              |
 | 2000::/3  | GLOBAL Unicast (Internet)        |
-| fc00::/7  | Unique-Local (LAN)               |
+| fc00::/7  | Unique-Local (LAN) / ULA         |
 | fe80::/10 | Link-Local Unicast (Same switch) |
 
 You should always use the smallest possible scope for communication.  
