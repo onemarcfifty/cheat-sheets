@@ -96,7 +96,7 @@ The following IPv6 multicast addresses may be used in in the link-local scope:
 | ff02::1:2 | All DHCP Servers and Agents            |
 | ff02::101 | All NTP Servers                        |
 
-A full list is maintained by [IANA](https://www.iana.org/assignments/ipv6-multicast-addresses/ipv6-multicast-addresses.xhtml)
+A full list is maintained by [IANA](https://www.iana.org/assignments/ipv6-multicast-addresses/ipv6-multicast-addresses.xhtml).
 
 You can actually ping these addresses, e.g. `ping ff02::1`
 
@@ -124,13 +124,13 @@ Here are some frequently used IPv6 ICMP types:
 | 135  | 0    | Neighbo(u)r Solicitation  |
 | 136  | 0    | Neighbo(u)r Advertisement |
 
-A full list is maintained by [IANA](https://www.iana.org/assignments/icmpv6-parameters/icmpv6-parameters.xhtml)
+A full list is maintained by [IANA](https://www.iana.org/assignments/icmpv6-parameters/icmpv6-parameters.xhtml).
 
 ## DHCPv6
 
-IPv6 addresses can be distributed using the IPv6 version of the **Dynamic Host Configuration Protocol (DHCPv6)**. If a host wishes to obtain an IPv6 address via DHCPv6, it sends out a **DHCP Solicitation** from UDP port 546 to port 547 on the DHCP multicast address `ff02::1:2`. The DHCP server then replies to the client (from UDP port 547 to UDP port 546) with **DHCP Advertisement**. This handshake can be completed by the client sending out a **DHCP Request** and the server responding with a **DHCP Reply**
+IPv6 addresses can be distributed using the IPv6 version of the **Dynamic Host Configuration Protocol (DHCPv6)**. If a host wishes to obtain an IPv6 address via DHCPv6, it sends out a **DHCP Solicitation** from UDP port 546 to port 547 on the DHCP multicast address `ff02::1:2`. The DHCP server then replies to the client (from UDP port 547 to UDP port 546) with **DHCP Advertisement**. This handshake can be completed by the client sending out a **DHCP Request** and the server responding with a **DHCP Reply**.
 
-The DHCPv6 protocol is explained in more detail in this [Wikipedia Article](https://en.wikipedia.org/wiki/DHCPv6)
+The DHCPv6 protocol is explained in more detail in this [Wikipedia Article](https://en.wikipedia.org/wiki/DHCPv6).
 
 ## DHCPv6 vs. SLAAC
 
@@ -138,9 +138,9 @@ Depending on how the router and the client are set up, the client can (and will)
 
 <img src=dhcp_slaac.jpg>
 
-## Using WireShark
+## Using Wireshark
 
-To gain a greater understanding of IPv6's functionality, you can use the packet sniffing tool WireShark to trace the message flow. Here are some WS filters for IPv6 ICMP, DHCPv6 and Router Solicitation and Advertisements:
+To gain a greater understanding of IPv6's functionality, you can use the packet sniffing tool Wireshark to trace the message flow. Here are some WS filters for IPv6 ICMP, DHCPv6 and Router Solicitation and Advertisements:
 
 Show ping and ping reply: `icmpv6 and (icmpv6.type==128) or (icmpv6.type==129)` <br>
 Router solicit and advertise: `icmpv6 and (icmpv6.type==133) or (icmpv6.type==134)` <br>
